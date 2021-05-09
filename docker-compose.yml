@@ -1,0 +1,83 @@
+version: '3'
+services:
+
+  backend:
+    build: ./Mock-Backend
+    container_name: backend
+    networks:
+      - backend
+    environment:
+     - ROOM_SERVER=http://localhost:3001
+     - STREAM_SERVER=http://localhost:3001
+     - ROOM_REPOSITORY=http://room_repository:3011
+    restart: on-failure
+    depends_on:
+     - room_repository
+     - heimdall
+    ports:
+     - "3000:3000"
+
+  room_repository:
+    build: ./RoomRepository
+    container_name: room_repository
+    networks:
+      - backend
+    environment:
+     - MYSQL_HOST=database
+     - MYSQL_USER=root
+     - MYSQL_PASSWORD=logmigpa
+     - MYSQL_DATABASE=coffeebreak
+    restart: on-failure
+    depends_on:
+     - database
+    ports:
+     - "3011:3011"
+
+  user_repository:
+    build: ./UserRepository
+    container_name: user_repository
+    networks:
+      - backend
+    environment:
+     - MYSQL_HOST=database
+     - MYSQL_USER=root
+     - MYSQL_PASSWORD=logmigpa
+     - MYSQL_DATABASE=coffeebreak
+    restart: on-failure
+    depends_on:
+     - database
+    ports:
+     - "3010:3010"
+
+  heimdall:
+    build: ./Heimdall
+    container_name: heimdall
+    networks:
+      - backend
+    environment:
+     - MYSQL_HOST=database
+     - MYSQL_USER=root
+     - MYSQL_PASSWORD=logmigpa
+     - MYSQL_DATABASE=coffeebreak
+     - USER_REPOSITORY=http://user_repository:3010
+     - ROOM_REPOSITORY=http://room_repository:3011
+    restart: on-failure
+    depends_on:
+     - database
+     - user_repository
+     - room_repository
+    ports:
+     - "3001:3001"
+
+  database:
+    image: mysql
+    container_name: database
+    networks:
+     - backend
+    environment:
+     - MYSQL_ROOT_PASSWORD=logmigpa
+     - MYSQL_DATABASE=coffeebreak
+    restart: on-failure
+
+networks:
+  backend:
